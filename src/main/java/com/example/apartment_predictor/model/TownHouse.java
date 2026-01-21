@@ -1,8 +1,13 @@
 package com.example.apartment_predictor.model;
 
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+
 import java.util.List;
 import java.util.UUID;
 
+@Entity
+@DiscriminatorValue("TOWNHOUSE")
 public class TownHouse extends Apartment {
 
     private boolean hasHomeownersAssociation;

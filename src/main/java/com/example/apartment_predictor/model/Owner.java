@@ -1,10 +1,18 @@
 package com.example.apartment_predictor.model;
 
-import java.time.LocalDate;
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
 
+import java.time.LocalDate;
+import java.util.UUID;
+
+@Entity
+@DiscriminatorValue("OWNER")
 public class Owner {
 
-    private  String id;
+    @Id
+    private String id = UUID.randomUUID().toString();
     private String name;
     private String email;
     private int age;

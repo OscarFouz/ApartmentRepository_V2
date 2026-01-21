@@ -1,7 +1,11 @@
 package com.example.apartment_predictor.model;
 
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 import java.util.UUID;
 
+@Entity
+@DiscriminatorValue("HOUSE")
 public class House extends Apartment {
 
     private int garageQty;

@@ -7,8 +7,10 @@ import java.util.List;
 import java.util.UUID;
 
 @Entity
-public class Apartment extends Property  {
-
+@Inheritance(strategy = InheritanceType.JOINED)
+@DiscriminatorColumn(name = "property_type")
+@DiscriminatorValue("APARTMENT")
+public class Apartment extends Property {
     @Id
     protected String id;
     private Long price;

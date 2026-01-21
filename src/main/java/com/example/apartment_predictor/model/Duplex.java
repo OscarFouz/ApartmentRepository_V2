@@ -1,7 +1,11 @@
 package com.example.apartment_predictor.model;
 
+import jakarta.persistence.DiscriminatorValue;
+import jakarta.persistence.Entity;
 import java.util.UUID;
 
+@Entity
+@DiscriminatorValue("DUPLEX")
 public class Duplex extends Apartment {
 
     private String balcony;
@@ -47,6 +51,14 @@ public class Duplex extends Apartment {
 
     public void setElevator(boolean elevator) {
         this.elevator = elevator;
+    }
+
+    public boolean hasSeparateUtilities() {
+        return hasSeparateUtilities;
+    }
+
+    public void setHasSeparateUtilities(boolean hasSeparateUtilities) {
+        this.elevator = hasSeparateUtilities;
     }
 
 
