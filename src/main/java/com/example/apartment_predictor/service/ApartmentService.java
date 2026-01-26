@@ -73,12 +73,7 @@ public class ApartmentService {
         Optional<Apartment> found = apartmentRepository.findById(id);
         if ( found.isPresent()) return found.get() ;
         else return null;
-
     }
 
     public void findApartmentByPrice (){}
-
-
-
-
 }

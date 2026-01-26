@@ -10,6 +10,7 @@ import java.util.UUID;
 @Inheritance(strategy = InheritanceType.JOINED)
 @DiscriminatorColumn(name = "property_type")
 @DiscriminatorValue("APARTMENT")
+
 public class Apartment extends Property {
     @Id
     protected String id;
