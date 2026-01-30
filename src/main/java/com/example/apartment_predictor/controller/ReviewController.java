@@ -10,9 +10,11 @@ import org.springframework.web.bind.annotation.*;
 import java.net.URI;
 import java.util.List;
 
+@CrossOrigin(origins = "http://localhost:5173")
 @RestController
 @RequestMapping("/api")
 public class ReviewController {
+
 
     private final ApartmentService apartmentService;
     private final ReviewRepository reviewRepository;
