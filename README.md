@@ -1,223 +1,209 @@
-# ApartmentPredictor
-Sistema de gestión y análisis de apartamentos con soporte para herencia JPA, reviews y carga automática desde CSV.
+# ApartmentPredictor — Backend Spring Boot
+Sistema de gestión inmobiliaria con soporte para apartamentos, casas, dúplex, adosados, contratos, reseñas, reviewers, propietarios y escuelas cercanas. Incluye generación automática de datos con DataFaker, relaciones JPA y API REST lista para conectar con un frontend.
 
----
+------------------------------------------------------------
+# Tecnologías
 
-# Backend — Spring Boot + H2 + JPA (JOINED)
+- Java 21
+- Spring Boot 3.2
+- Spring Data JPA
+- H2 Database (modo archivo)
+- DataFaker
+- Jackson
+- Maven
 
-Este backend implementa un sistema completo para gestionar apartamentos y sus reseñas, con soporte para:
+------------------------------------------------------------
+# Estructura del Proyecto
 
-- Persistencia en H2 Database (modo archivo)
-- API REST con Spring Boot
-- Herencia JPA con estrategia JOINED
-- Entidades polimórficas: Apartment, House, Duplex, TownHouse
-- Gestión de reviews asociadas a apartamentos
-- Carga inicial de datos desde CSV
-- Serialización JSON con Jackson
-- Controladores REST desacoplados por dominio
-- Exportación de datos a JSON
-
----
-
-# Arquitectura del Proyecto
-
-```
+```txt
 src/main/java/com/example/apartment_predictor
 │
 ├── controller
 │   ├── ApartmentController.java
-│   └── ReviewController.java
+│   ├── HouseController.java
+│   ├── DuplexController.java
+│   ├── TownHouseController.java
+│   ├── OwnerController.java
+│   ├── ReviewerController.java
+│   ├── ReviewController.java
+│   └── PropertyContractController.java
 │
 ├── model
-│   ├── Property.java
 │   ├── Apartment.java
 │   ├── House.java
 │   ├── Duplex.java
 │   ├── TownHouse.java
+│   ├── Owner.java
+│   ├── Reviewer.java
 │   ├── Review.java
-│   └── Owner.java
+│   ├── School.java
+│   ├── PropertyContract.java
+│   └── Person.java
 │
 ├── repository
 │   ├── ApartmentRepository.java
-│   └── ReviewRepository.java
+│   ├── HouseRepository.java
+│   ├── DuplexRepository.java
+│   ├── TownHouseRepository.java
+│   ├── OwnerRepository.java
+│   ├── ReviewerRepository.java
+│   ├── ReviewRepository.java
+│   ├── SchoolRepository.java
+│   └── PropertyContractRepository.java
 │
 ├── service
 │   ├── ApartmentService.java
-│   ├── LoadInitialDataService.java
-│   ├── LoadReviewDataService.java
-│   └── ReviewService.java
+│   ├── HouseService.java
+│   ├── DuplexService.java
+│   ├── TownHouseService.java
+│   ├── OwnerService.java
+│   ├── ReviewerService.java
+│   ├── ReviewService.java
+│   ├── PropertyContractService.java
+│   └── PopulateMasterService.java
 │
 └── utils
     ├── ApartmentJsonWriter.java
     └── PrintingUtils.java
 ```
 
----
+------------------------------------------------------------
 
 # Modelo de Datos
 
-## Herencia JPA — Clase base Property
+## Apartment
+Atributos:
+- price, area, bedrooms, bathrooms, stories
+- mainroad, guestroom, basement, hotwaterheating, airconditioning
+- parking, prefarea, furnishingstatus
 
-El proyecto utiliza herencia con estrategia JOINED, lo que genera:
+Relaciones:
+- OneToMany → Review
+- OneToMany → PropertyContract
+- ManyToMany → School
 
-- Una tabla base `property`
-- Una columna discriminadora `property_type`
-- Una tabla por cada subclase (`apartment`, `house`, `duplex`, `townhouse`)
+## House / Duplex / TownHouse
+Relaciones:
+- OneToOne → Apartment
+- ManyToOne → Owner
+- ManyToMany → School
 
-Para exponer el tipo al frontend se recomienda:
+## Owner (hereda de Person)
+Atributos:
+- name, email, phone
 
-```java
-@Transient
-public String getPropertyType() {
-    return this.getClass().getSimpleName();
-}
-```
+Relaciones:
+- OneToMany → House
+- OneToMany → Duplex
+- OneToMany → TownHouse
+- OneToMany → PropertyContract
 
----
+## Reviewer (hereda de Person)
+Atributos:
+- name, email, reputation
 
-# Entidad Apartment
+Relaciones:
+- OneToMany → Review
 
-- Entidad principal del sistema.
-- Contiene atributos comunes (price, bedrooms, bathrooms, etc.)
-- Relación OneToMany con Review:
+## Review
+Atributos:
+- title, content, rating, reviewDate
 
-```java
-@OneToMany(mappedBy = "apartment", cascade = CascadeType.ALL, fetch = FetchType.EAGER)
-@JsonManagedReference
-```
+Relaciones:
+- ManyToOne → Apartment
+- ManyToOne → Reviewer
 
-- Métodos helper: addReview(), removeReview()
-- Constructor con UUID automático
+## School
+Atributos:
+- name, address, type, educationLevel
+- latitude, longitude, rating, studentCount
 
----
+Relaciones:
+- ManyToMany → Apartment, House, Duplex, TownHouse
 
-# Subclases de Apartment
+## PropertyContract
+Atributos:
+- agreedPrice, startDate, endDate, active
 
-## House
-Atributos adicionales:
-- garageQty
-- roofType
-- garden
+Relaciones:
+- ManyToOne → Owner
+- ManyToOne → Apartment / House / Duplex / TownHouse
 
-## Duplex
-Atributos adicionales:
-- balcony
-- elevator
-- hasSeparateUtilities
+------------------------------------------------------------
+# Población Automática de Datos
 
-## TownHouse
-Atributos adicionales:
-- hasHomeownersAssociation
-- hoaMonthlyFee
+PopulateMasterService genera:
+- 15 Schools
+- 20 Owners
+- Cada Owner tiene:
+    - 3 Apartments
+    - 1 House
+    - 1 Duplex
+    - 1 TownHouse
+    - Contratos asociados
+- 15 Reviewers
+- 3 Reviews por Apartment
 
-Cada subclase redefine calculatePrice().
+Todo generado con DataFaker al arrancar la aplicación.
 
----
+------------------------------------------------------------
+# API REST
 
-# Entidad Review
-
-- Relación ManyToOne con Apartment:
-
-```java
-@ManyToOne
-@JoinColumn(name = "apartment_fk")
-@JsonBackReference
-```
-
-- Campos:
-    - title
-    - content
-    - rating
-    - reviewDate
-
-- UUID automático
-
----
-
-# Repositorios
-
-- ApartmentRepository → CrudRepository<Apartment, String>
-- ReviewRepository → CrudRepository<Review, String>
-
----
-
-# Servicios
-
-## ApartmentService
-- CRUD completo
-- Actualización de reviews
-- Búsqueda por ID
-
-## LoadInitialDataService
-- Carga apartamentos desde CSV
-- Genera tipos aleatorios (Apartment, House, Duplex, TownHouse)
-
-## LoadReviewDataService
-- Carga reviews desde CSV
-- Asigna cada review a un apartamento aleatorio
-
----
-
-# Controladores REST
-
-## ApartmentController
-- GET /api/apartments
-- GET /api/apartments/{id}
-- POST /api/apartments
-- PUT /api/apartments/{id}
-- DELETE /api/apartments/{id}
-- GET /api/apartments/export → genera apartments.json
-
-## ReviewController
-- GET /api/apartments/{id}/reviews
-- POST /api/apartments/{id}/reviews
-- DELETE /api/reviews/{reviewId}
-
----
-
-# Configuración H2 (application.properties)
-
-```
-spring.datasource.url=jdbc:h2:file:./db/apartmentpredictordb
-spring.datasource.username=oscar
-spring.datasource.password=1234
-spring.jpa.hibernate.ddl-auto=update
-spring.h2.console.enabled=true
-app.csv.path=db/Housing.csv
-app.reviews.csv.path=db/Reviews.csv
-```
-
-Consola H2:
-
-```
-http://localhost:8080/h2-console
-```
-
----
-
-# Ejecución
-
-```
-mvn spring-boot:run
-```
-
----
-
-# Exportación de Datos
-
-```
+## Apartments
+GET /api/apartments  
+GET /api/apartments/{id}  
+POST /api/apartments  
+PUT /api/apartments/{id}  
+DELETE /api/apartments/{id}  
 GET /api/apartments/export
-```
 
-Genera un archivo apartments.json con todos los apartamentos.
+## Houses
+GET /api/houses  
+GET /api/houses/{id}  
+POST /api/houses  
+PUT /api/houses/{id}  
+DELETE /api/houses/{id}
 
----
+## Duplexes
+GET /api/duplexes  
+GET /api/duplexes/{id}  
+POST /api/duplexes  
+PUT /api/duplexes/{id}  
+DELETE /api/duplexes/{id}
 
-# Estado del Proyecto
+## TownHouses
+GET /api/townhouses  
+GET /api/townhouses/{id}  
+POST /api/townhouses  
+PUT /api/townhouses/{id}  
+DELETE /api/townhouses/{id}
 
-- Backend funcional
-- Herencia JPA estable
-- Relaciones bidireccionales controladas
-- Carga automática desde CSV
-- API lista para integrarse con React
+## Owners
+GET /api/owners  
+GET /api/owners/{id}  
+POST /api/owners  
+PUT /api/owners/{id}  
+DELETE /api/owners/{id}  
+GET /api/owners/{id}/houses  
+GET /api/owners/{id}/duplexes  
+GET /api/owners/{id}/townhouses
 
+## Reviewers
+GET /api/reviewers  
+GET /api/reviewers/{id}  
+POST /api/reviewers  
+PUT /api/reviewers/{id}  
+DELETE /api/reviewers/{id}  
+GET /api/reviewers/{id}/reviews
+
+## Reviews
+GET /api/apartments/{id}/reviews  
+POST /api/apartments/{id}/reviews  
+DELETE /api/reviews/{reviewId}
+
+## Property Contracts
+GET /api/contracts  
+GET /api/contracts/{id}  
+POST /api/contracts  
+PUT /api/contracts/{id}/close  
+DELETE /api/contracts/{id}
